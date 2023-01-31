@@ -1,4 +1,4 @@
-const {createSign,createVerify,createECDH,createPrivateKey,createPublicKey,generateKeyPairSync} = require('crypto');
+const {createSign,createVerify,createPrivateKey,createPublicKey,generateKeyPairSync} = require('crypto');
 
 
 class Wallet
@@ -7,7 +7,6 @@ class Wallet
     {
         this.privateKey 
         this.publicKey
-        this.ecdh = createECDH('secp256k1');
 
         if(key==''){
 
@@ -124,4 +123,3 @@ class Wallet
 }
 
 module.exports = Wallet
-//generateKeyPair
