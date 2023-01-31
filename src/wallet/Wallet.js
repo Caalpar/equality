@@ -109,10 +109,6 @@ class Wallet
         return verify.verify(publicKey, signature, 'hex');
     }
 
-    balance(){
-        return 'In Progres'
-    }
-
 
     get PrivateKey(){
         return this.privateKey

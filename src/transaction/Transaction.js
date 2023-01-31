@@ -1,13 +1,15 @@
 const Wallet = require("../wallet/Wallet")
+const { v4: uuidv4 } = require('uuid');
 
 
-
-class Transactions
+class Transaction
 {
+    #Wallet
     constructor(privateKeySender,publicKeyRecive,amount){
-        this.Wallet = new Wallet(privateKeySender)
+        this.id = uuidv4()
+        this.#Wallet = new Wallet(privateKeySender)
         this.outputs = []
-        this.input = this.Wallet.PublicKey
+        this.input = this.#Wallet.PublicKey
         this.signature = ''
         this.addTransaction(publicKeyRecive,amount)
     }
@@ -22,7 +24,7 @@ class Transactions
     }
 
     sign(){
-        this.signature = this.Wallet.sign({input:this.input,outputs:this.outputs})
+        this.signature = this.#Wallet.sign({input:this.input,outputs:this.outputs})
     }
     
     static verify(input,outputs,signature)
@@ -30,4 +32,4 @@ class Transactions
        return Wallet.verify({input,outputs},input,signature)
     }
 }
-module.exports = Transactions
+module.exports = Transaction
