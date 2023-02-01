@@ -24,6 +24,7 @@ class Transaction
     }
 
     sign(){
+        
         this.signature = this.#Wallet.sign({input:this.input,outputs:this.outputs})
     }
     

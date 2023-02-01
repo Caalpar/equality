@@ -28,7 +28,6 @@ class Block{
         const previousHash = previousBlock.hash
         const timestamp = Date.now()
         const hash = createHash('sha256').update(JSON.stringify({previousHash,timestamp,data})).digest('hex')
-        console.log(hash);
         return new this(timestamp,previousHash, hash,data);
     }
 
