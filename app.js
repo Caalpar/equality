@@ -1,8 +1,16 @@
 require('dotenv').config();
 
+
+
 const Mainpool = require("./src/mainpool/Mainpool");
+const Server = require('./src/restapi/server');
 const Transaction = require("./src/transaction/Transaction");
 const Wallet = require("./src/wallet/Wallet");
+
+const server = new Server()
+
+server.listen()
+
 
 const mainpool =  new Mainpool()
 
@@ -18,13 +26,14 @@ mainpool.addOrUpdate(new Transaction(process.env.PRIVATE_KEY,wallet1.publicKey,1
 mainpool.addOrUpdate(new Transaction(process.env.PRIVATE_KEY,wallet2.publicKey,1000))
 mainpool.addOrUpdate(new Transaction(process.env.PRIVATE_KEY,wallet3.publicKey,1000))
 
-mainpool.addOrUpdate(new Transaction(process.env.PRIVATE_KEY,wallet1.publicKey,1000))
-mainpool.addOrUpdate(new Transaction(process.env.PRIVATE_KEY,wallet2.publicKey,1000))
-mainpool.addOrUpdate(new Transaction(process.env.PRIVATE_KEY,wallet3.publicKey,1000))
 
-let tran1 = new Transaction(wallet1.PrivateKey,wallet2.publicKey,10)
-let tran2 = new Transaction(wallet1.PrivateKey,wallet2.publicKey,10)
-let tran3 = new Transaction(wallet1.PrivateKey,wallet2.publicKey,10)
+let tran1 = new Transaction(wallet1.PrivateKey,wallet2.publicKey,10) //1000-40 -2
+let tran2 = new Transaction(wallet3.PrivateKey,wallet2.publicKey,20)  //1000 80 -2
+let tran3 = new Transaction(wallet2.PrivateKey,wallet3.publicKey,40)  
+
+console.log({wallet1})
+console.log({wallet2})
+console.log({wallet3})
 
 mainpool.addOrUpdate(tran1)
 mainpool.addOrUpdate(tran2)
@@ -49,4 +58,4 @@ mainpool.addOrUpdate(tran3)
 
 
 
- console.log(JSON.stringify(mainpool.blockchain,null,2))
+//  console.log(JSON.stringify(mainpool.blockchain,null,2))
