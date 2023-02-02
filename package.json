@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Caalpar/equality#readme",
   "dependencies": {
     "crypto": "^1.0.1",
+    "dotenv": "^16.0.3",
     "uuid": "^9.0.0"
   }
 }
