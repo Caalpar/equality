@@ -4,8 +4,7 @@ class BlockChain {
     static instance
     constructor() {
         this.blocks = [Block.genesis];
-       // this.memoryPool = new MemoryPool();
-        
+  
        // patron sigleton
         if (typeof BlockChain.instance == "object") {
             return BlockChain.instance
