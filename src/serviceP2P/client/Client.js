@@ -4,8 +4,9 @@ const customEvent = require('../../events/events.js')
 
 
 class Client{
-    constructor(host,port){
+    constructor(id,host,port){
 
+        this.id = id
         this.port=port
         this.host=host
 
@@ -26,7 +27,11 @@ class Client{
         
         this.client.on('data',(data)=>{
     
-            let jData = JSON.parse(data.toString('utf-8'))
+            let textDataArr = data.toString('utf-8').split('|')
+
+            let index_data = textDataArr.findIndex(d=>d != '')
+
+            let jData = JSON.parse(textDataArr[index_data])
 
             switch (jData.e) {
                 case 'brodcast':
@@ -36,8 +41,12 @@ class Client{
                         }
                     break;
                 case 'test':
-                        console.log('[Test]',jData.data)
-                    break;
+                     customEvent.emit('brodcast-test',jData)
+                break;
+                case 'remove-client':
+                    // customEvent.emit('remove-client',{id:this.id,host:this.host,port:this.port})
+                    customEvent.emit('remove-client',{id:this.id})
+                break;
             
                 default:
                     break;
@@ -50,8 +59,10 @@ class Client{
         })
         
         this.client.on('error',(error)=>{
-            //console.log(`error en el socket ${this.host}:${this.port}`)
-            customEvent.emit('error-connect',{host:this.host,port:this.port})
+         //   customEvent.emit('error-connect',{id:this.id})
+           
+         
+         // customEvent.emit('error-connect',{id:this.id,host:this.host,port:this.port})
         })
         
         this.client.on('close',(close)=>{
@@ -82,7 +93,8 @@ class Client{
 
     removeMe(){
 
-        customEvent.emit('remove-client',{host:this.host,port:this.port})
+        // customEvent.emit('remove-client',{id:this.id,host:this.host,port:this.port})
+        customEvent.emit('remove-client',{id:this.id})
 
     }
 }    

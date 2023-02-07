@@ -4,13 +4,12 @@ require('dotenv').config();
 const ServerP2P = require("./src/serviceP2P/server/Server.js")
 const Server = require('./src/restapi/server');
 const ConnectNodes = require('./src/serviceP2P/connect_nodes/CennectNodes.js');
+const customEvent = require('./src/events/events.js')
+
+const server = new Server()
 
 // instancia sigleton
 const nodesToConnect = new ConnectNodes()
-
-
-
-const server = new Server()
 const serverp2p =new ServerP2P(process.env.PORT_P2P)
 
 
@@ -19,9 +18,14 @@ serverp2p.listen()
 
 //if(process.env.PORT_P2P_SERVER != 4001)
 
+// customEvent.on('brodcast-test',(data)=>{
+//     console.log(data)
+  
+//   serverp2p.brodcast(data.e,data.data)
+// })
 
  setInterval(() => {
-    serverp2p.brodcast('test','hola desde:'+process.env.PORT_P2P)
+    serverp2p.brodcast('test',{nodes_path:[],msg:'hola desde:'+process.env.PORT_P2P})
 }, 1000);
 
 // const Mainpool = require("./src/mainpool/Mainpool");
