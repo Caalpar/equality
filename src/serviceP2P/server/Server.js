@@ -1,6 +1,12 @@
 
 const net = require('net');
 const ConnectNodes = require('../connect_nodes/CennectNodes.js');
+const PeerOfConnection = require('../peerOfConnection/PeerOfConnection.js');
+const customEvent = require('../../events/events.js');
+const Mainpool = require('../../mainpool/Mainpool.js');
+
+
+
 
 
 class ServerP2P{
@@ -21,7 +27,7 @@ class ServerP2P{
         });
 
         this.server.on('connection', (socket) => {
-            console.log('connection: here save socket')
+           // console.log('connection: here save socket')
 
 
             this.sockets.push(socket)
@@ -50,17 +56,47 @@ class ServerP2P{
                                 socket.write('|'+JSON.stringify({e:jData.event_send,data:jData.data})+'|');
                             }
                         break;
-                    case 'connect':
-                        const  {id,host,port,hosts} = jData.data
+                    case 'connect':{
+                        const  {id,host,port,timestamp,hosts,mainpool} = jData.data
+
+                        if(!PeerOfConnection.instance.addQuaque(id,timestamp)){
+                            this.brodcast('disconnect-node',{id})
+                            socket.end();
+                            return
+                        }
+
+                   
+                        if(mainpool.transactions.length > 0 && !PeerOfConnection.instance.addTrasactions(mainpool.transactions,timestamp)){
+                            this.brodcast('disconnect-node',{id})
+                            socket.end();
+                            return
+                        }
+
                         socket.id = id
-                        ConnectNodes.instance.addConnection(id,host,parseInt(port))
-                        if(hosts.length>0){
-                            for (let index = 0; index < hosts.length; index++) {
-             
-                                ConnectNodes.instance.addConnection(id,hosts[index].host,parseInt(hosts[index].port))                                
+                      
+                        ConnectNodes.instance.connect2(id,host,parseInt(port))                                
+            
+                    break;
+                    }
+                    case 'connect-2':{
+
+                 
+                        const  {hosts} = jData.data
+
+                        const new_hosts = ConnectNodes.instance.hostWhitoutConnect(hosts)
+
+
+                        if(new_hosts.length>0){
+
+                            for (let index = 0; index < new_hosts.length; index++) {
+                                const {id,host,port} = new_hosts[index];
+                                ConnectNodes.instance.tryConnect(id,host,parseInt(port))               
                             }
                         }
+
+                      
                     break;
+                    }                            
                     case 'bad-node':
                         console.log('bad node in server')
                     break;
@@ -73,13 +109,16 @@ class ServerP2P{
 
              
             socket.on('close',()=>{
-                //console.log('socket close...')
-                this.sockets.splice(this.sockets.indexOf(socket), 1);
+                customEvent.emit('remove-client',{id:socket.id})
+                let index_socket = this.sockets.findIndex(s=>s.id == socket.id)
+                if(index_socket != -1){
+                    this.sockets.splice(index_socket, 1);
+                }
             })
 
             socket.on('end',()=>{
-              //  console.log('socket end...')
-                this.sockets.splice(this.sockets.indexOf(socket), 1);
+                console.log('socket end...')
+              //  this.sockets.splice(this.sockets.indexOf(socket), 1);
             })
 
             socket.on('error',()=>{
@@ -95,6 +134,28 @@ class ServerP2P{
               console.log("connection...")
         });
      
+        customEvent.on('remove-client',(data)=>{
+            const {id,nodes_path} = data
+
+            let index_socket = this.sockets.findIndex(s=>s.id == id)
+
+            if(index_socket != -1){
+                this.sockets[index_socket].end()
+                this.brodcast('disconnect-node',{id,nodes_path})
+                this.sockets.splice(index_socket, 1);
+            }
+
+        })
+
+        customEvent.on('new-transaction',(data)=>{
+            this.brodcast(data.e,data.data)
+        })
+
+        customEvent.on('new-transaction-brodcast',(data)=>{
+            this.brodcast('new-transaction',data)
+        })
+
+
         // patron sigleton
         if (typeof ServerP2P.instance == "object") {
             return ServerP2P.instance
@@ -111,9 +172,6 @@ class ServerP2P{
 
     brodcast(event_send,data){
 
-
-
-
         if(data.nodes_path){
             let index_path_node = data.nodes_path.findIndex(id=>id == process.env.PUBLIC_KEY) 
 
@@ -122,7 +180,10 @@ class ServerP2P{
             else
             return
 
+        }else{
+            data.nodes_path = [process.env.PUBLIC_KEY]
         }
+
 
         this.client.write("|"+JSON.stringify({e:'brodcast',event_send,data})+'|')
     }

@@ -1,5 +1,9 @@
 const net = require('net');
-const customEvent = require('../../events/events.js')
+const customEvent = require('../../events/events.js');
+const Transaction = require('../../transaction/Transaction.js');
+const ConnectNodes = require('../connect_nodes/CennectNodes.js');
+const PeerOfConnection = require('../peerOfConnection/PeerOfConnection.js');
+
 
 
 
@@ -18,7 +22,8 @@ class Client{
         });
         
         this.client.on('connect',()=>{
-            //console.log('connect...')
+            console.log('connect...',this.port)
+            this.IsConnected()
         })
         
         this.client.on('drain',(data)=>{
@@ -34,18 +39,48 @@ class Client{
             let jData = JSON.parse(textDataArr[index_data])
 
             switch (jData.e) {
-                case 'brodcast':
-                    for (let index = 0; index < this.sockets.length; index++) {
-                        const socket = this.sockets[index];
-                            socket.write(data);
-                        }
-                    break;
                 case 'test':
-                     customEvent.emit('brodcast-test',jData)
+           
+                    // customEvent.emit('brodcast-test',jData)
                 break;
-                case 'remove-client':
-                    // customEvent.emit('remove-client',{id:this.id,host:this.host,port:this.port})
-                    customEvent.emit('remove-client',{id:this.id})
+                case 'connect':
+                    const {id,host,port,timestamp,mainpool} = jData
+
+                    if(!PeerOfConnection.instance.addQuaque(id,timestamp)){
+                        console.log('borrando nodo malicioso')
+                        //this.brodcast('disconnect-node',{id})
+                        this.client.end();
+                        return
+                    }
+
+               
+                    if(mainpool.transactions.length > 0 && !PeerOfConnection.instance.addTrasactions(mainpool.transactions,timestamp)){
+                        console.log('borrando nodo malicioso')
+                        //this.brodcast('disconnect-node',{id})
+                        this.client.end();
+                        return
+                    }
+
+                    customEvent.emit('new-connection',{id,host,port})
+      
+
+
+                    // customEvent.emit('brodcast-test',jData)
+                break;
+                case 'new-transaction':
+           
+                    const {input,outputs,signature} = jData.data
+                    if(Transaction.verify(input,outputs,signature))   
+                       customEvent.emit('new-transaction',jData)  
+                    else
+                    {
+                        let id_socket = jData.data.nodes_path[0]
+                        customEvent.emit('remove-client',{id:id_socket,nodes_path:jData.data.nodes_path})
+                    }        
+                break;
+                case 'disconnect-node':
+                    console.log('borrar nodo remoto')
+                    customEvent.emit('remove-client',{id:jData.data.id,nodes_path:jData.data.nodes_path})
                 break;
             
                 default:
@@ -54,23 +89,16 @@ class Client{
         })
         
         this.client.on('end',()=>{
-            this.removeMe()
-          //  console.log('end...')
+         //   console.log('end...')
         })
         
         this.client.on('error',(error)=>{
-         //   customEvent.emit('error-connect',{id:this.id})
-           
-         
-         // customEvent.emit('error-connect',{id:this.id,host:this.host,port:this.port})
+        // console.log('errr...')
         })
         
         this.client.on('close',(close)=>{
-
-            if(close){
-                this.removeMe()
-            }
-
+           // console.log('close...')
+            customEvent.emit('remove-client',{id:this.id})
         })
         
         this.client.on('lookup',(data)=>{
@@ -85,17 +113,15 @@ class Client{
            // console.log('timeout')
         })
 
+
+
     }
     
     sendData(e,data){
-        this.client.write(JSON.stringify({e,data}))
+        this.client.write('|'+JSON.stringify({e,data})+'|')
     }
-
-    removeMe(){
-
-        // customEvent.emit('remove-client',{id:this.id,host:this.host,port:this.port})
-        customEvent.emit('remove-client',{id:this.id})
-
+    IsConnected(){
+        customEvent.emit('connect-new-node',this)
     }
 }    
 

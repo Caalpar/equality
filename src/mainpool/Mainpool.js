@@ -1,5 +1,6 @@
 const BlockChain = require("../blockchain/BlockChain");
 const Transaction = require("../transaction/Transaction");
+const customEvent = require('../events/events.js');
 
 
 
@@ -7,11 +8,16 @@ const Transaction = require("../transaction/Transaction");
 class Mainpool{
     static instance = undefined
 
-    constructor(numTransactions = 3) {
+    constructor(numTransactions = 5) {
             // patron sigleton
         if (typeof Mainpool.instance == "object") {
             return Mainpool.instance
         }
+
+      customEvent.on('new-transaction',(data)=>{
+          const {id,input,outputs,signature} = data.data
+          Mainpool.instance.addOrUpdate({id,input,outputs,signature},true)
+      })
       
         this.transactions = [];
         this.numTransactions = numTransactions
@@ -21,13 +27,19 @@ class Mainpool{
         return this
     }
 
-    addOrUpdate(transaction) {
+    addOrUpdate(transaction,remote=false) {
 
-      const {input,outputs,signature} = transaction
+      const {id,input,outputs,signature} = transaction
       if(Transaction.verify(input,outputs,signature)){
-        const txIndex = this.transactions.findIndex(({ id }) => id === transaction.id);
-        if (txIndex != -1) this.transactions[txIndex] = transaction;
-        else this.transactions.push(transaction);
+        const txIndex = this.transactions.findIndex(t => t.id == id);
+        if (txIndex != -1) this.transactions[txIndex] = {id,input,outputs,signature};
+        else this.transactions.push({id,input,outputs,signature});
+
+
+        // send new transaction to all nodes
+        if(!remote)
+            customEvent.emit('new-transaction-brodcast',transaction)
+
         if(this.transactions.length == this.numTransactions)
         {
 
@@ -38,7 +50,9 @@ class Mainpool{
           BlockChain.instance.addBlock(this.transactions)
           this.wipe()
         }
+        return true
       }
+      return false
     }
 
 

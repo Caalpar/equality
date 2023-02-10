@@ -5,12 +5,14 @@ const Transaction = require('../../transaction/Transaction');
 const router = express.Router();
 
 
+router.get('/pending',(req,res)=>{
+    const transactions = Mainpool.instance.transactions
+    res.json({transactions})
+}) 
 
 router.get('/:_id',(req,res)=>{
     const {publicKey} = req.params
-
     const transaction = Mainpool.instance.find(publicKey)
-
     res.json({transaction})
 }) 
 
@@ -24,8 +26,6 @@ router.post('/',(req,res)=>{
     {
         fee = req.body.outputs[0].fee
     }
-
-    console.log(req.body)
 
    let transaction = new Transaction(input,outputs[0].address,outputs[0].amount,fee)
 

@@ -4,11 +4,15 @@ require('dotenv').config();
 const ServerP2P = require("./src/serviceP2P/server/Server.js")
 const Server = require('./src/restapi/server');
 const ConnectNodes = require('./src/serviceP2P/connect_nodes/CennectNodes.js');
-const customEvent = require('./src/events/events.js')
+const customEvent = require('./src/events/events.js');
+const PeerOfConnection = require('./src/serviceP2P/peerOfConnection/PeerOfConnection.js');
+const Mainpool = require("./src/mainpool/Mainpool");
 
 const server = new Server()
 
 // instancia sigleton
+const mainpool =  new Mainpool()
+const peerOfConnection = new PeerOfConnection()
 const nodesToConnect = new ConnectNodes()
 const serverp2p =new ServerP2P(process.env.PORT_P2P)
 
@@ -24,17 +28,15 @@ serverp2p.listen()
 //   serverp2p.brodcast(data.e,data.data)
 // })
 
- setInterval(() => {
-    serverp2p.brodcast('test',{nodes_path:[],msg:'hola desde:'+process.env.PORT_P2P})
-}, 1000);
+//  setInterval(() => {
+//     serverp2p.brodcast('test',{msg:'hola desde:'+process.env.PORT_P2P})
+// }, 1000);
 
-// const Mainpool = require("./src/mainpool/Mainpool");
 // const Transaction = require("./src/transaction/Transaction");
 // const Wallet = require("./src/wallet/Wallet");
 
 
 
-// const mainpool =  new Mainpool()
 
 
 // try {
