@@ -1,36 +1,28 @@
 const {createSign,createVerify,createPrivateKey,createPublicKey,generateKeyPairSync} = require('crypto');
 
-
-class Wallet
-{
-    constructor(key = '')
-    {
+class Wallet {
+    constructor(key = '') {
         this.privateKey 
         this.publicKey
 
-        if(key==''){
-
-            const {privateKey,publicKey} =generateKeyPairSync('ec',
-                {
-                    namedCurve:'secp256k1',
-                    publicKeyEncoding: {
-                        type: 'spki',
-                        format: 'der',
-                    },
-                    privateKeyEncoding: {
-                        type: 'sec1',
-                        format: 'der',
-                    },
-                })
+        if(key == '') {
+            const {privateKey,publicKey} = generateKeyPairSync('ec', {
+                namedCurve:'secp256k1',
+                publicKeyEncoding: {
+                    type: 'spki',
+                    format: 'der',
+                },
+                privateKeyEncoding: {
+                    type: 'sec1',
+                    format: 'der',
+                }
+            })
 
             this.privateKey = privateKey.toString('hex')
             this.publicKey = publicKey.toString('hex')
-        }
-        else
-        {
-
+        } else {
             const privateKey = createPrivateKey({
-                key:key,
+                key: key,
                 type: 'sec1',
                 format: 'der',
                 encoding: 'hex'
@@ -49,71 +41,78 @@ class Wallet
         }   
     }
 
-    static sign(data,privateKey)
-    {
+    // Canonicalizar JSON para firma determinista
+    static canonicalize(obj) {
+        if (obj === null) return 'null';
+        if (typeof obj !== 'object') return JSON.stringify(obj);
+        if (Array.isArray(obj)) {
+            return '[' + obj.map(Wallet.canonicalize).join(',') + ']';
+        }
+        const keys = Object.keys(obj).sort();
+        return '{' + keys.map(k => JSON.stringify(k) + ':' + Wallet.canonicalize(obj[k])).join(',') + '}';
+    }
+
+    static sign(data, privateKey) {
         const key = createPrivateKey({
             'key': privateKey,
             type: 'sec1',
             format: 'der',
             encoding: 'hex'
         });
+        const canonicalData = Wallet.canonicalize(data);
         const sign = createSign('SHA256');
-        sign.write(JSON.stringify(data));
+        sign.write(canonicalData);
         sign.end();
         return sign.sign(key, 'hex');
     }
 
-    static verify(data,publicKey,signature){
-
+    static verify(data, publicKey, signature) {
         const key = createPublicKey({
             key: publicKey,
             type: 'spki',
             format: 'der',
             encoding: 'hex'
         });
-
+        const canonicalData = Wallet.canonicalize(data);
         const verify = createVerify('SHA256');
-        verify.write(JSON.stringify(data));
+        verify.write(canonicalData);
         verify.end();
         return verify.verify(key, signature, 'hex');
     }
 
-    sign(data)
-    {
-
+    sign(data) {
         const privateKey = createPrivateKey({
-            key: this.PrivateKey,
+            key: this.privateKey,
             type: 'sec1',
             format: 'der',
             encoding: 'hex'
         });
-
+        const canonicalData = Wallet.canonicalize(data);
         const sign = createSign('SHA256');
-        sign.write(JSON.stringify(data));
+        sign.write(canonicalData);
         sign.end();
         return sign.sign(privateKey, 'hex');
     }
 
-    verify(data,signature){
-
+    verify(data, signature) {
         const publicKey = createPublicKey({
-                key:this.PublicKey,
-                type: 'spki',
-                format: 'der',
-                encoding: 'hex'
+            key: this.publicKey,
+            type: 'spki',
+            format: 'der',
+            encoding: 'hex'
         })
-
+        const canonicalData = Wallet.canonicalize(data);
         const verify = createVerify('SHA256');
-        verify.write(JSON.stringify(data));
+        verify.write(canonicalData);
         verify.end();
         return verify.verify(publicKey, signature, 'hex');
     }
 
-
-    get PrivateKey(){
+    get PrivateKey() {
         return this.privateKey
     }
-    get PublicKey(){
+    
+    get PublicKey() {
         return this.publicKey
     }
 }

@@ -1,44 +1,43 @@
 const BlockChain = require("../blockchain/BlockChain.js")
 
+const CheckBalance = (publicKey = '') => {
+    let balance = 0
+    const { instance: { blocks } } = BlockChain
 
-const CheckBalance = (publicKey='')=>{
-
-      let balance = 0
-
-       const {instance:{blocks}} = BlockChain
-
-        for (let index = 0; index < blocks.length; index++) {
-            const {data} = blocks[index];
+    for (let blockIdx = 0; blockIdx < blocks.length; blockIdx++) {
+        const { data } = blocks[blockIdx];
         
-            for (let index = 0; index < data.length; index++) {
-                const {input,outputs} = data[index];
+        for (let txIdx = 0; txIdx < data.length; txIdx++) {
+            const { input, outputs } = data[txIdx];
+            let txFeeTotal = 0;
 
-                for (let index = 0; index < outputs.length; index++) {
-                   
-                    const out = outputs[index];
-        
-                    if(input == publicKey)
-                    {
-                        if(out.address == publicKey)
-                            balance += out.amount     
-                        else
-                            balance -= out.amount
-                        
-                        balance -= out.fee
-                    } 
-                    else  if(out.address == publicKey)     
+            for (let outIdx = 0; outIdx < outputs.length; outIdx++) {
+                const out = outputs[outIdx];
+
+                if (input === publicKey) {
+                    // Si es el remitente
+                    if (out.address === publicKey) {
                         balance += out.amount
-                    
+                    } else {
+                        balance -= out.amount
+                    }
+                   
+                    txFeeTotal += (out.fee || 0);
+                } else if (out.address === publicKey) {
+                    // Si es destinatario
+                    balance += out.amount
                 }
-                
             }
 
+            // Restar fee una sola vez si es remitente
+            if (input === publicKey) {
+                balance -= txFeeTotal;
+            }
         }
+    }
 
-        return balance
+    return balance
 }
-
-
 
 module.exports = {
     CheckBalance
